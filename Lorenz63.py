@@ -20,18 +20,18 @@ import numpy as np
 
 class Lorenz63:
 
-	def __init__(self,x0,par,dt,solver="RK4",F=0,mem=1):
-		self.x = x0
+	def __init__(self,x0,par,dt,solver="RK4",F=[0,0,0],mem=1):
+		self.x = x0+0.1*np.random.normal(size=(mem,np.size(x0)))
 		self.dt = dt
 		self.par = par
 		self.t=0
-		self.mem=mem
 		self.F=F
+		self.mem =mem
 		if solver == "RK2":
 			self._solver = self._rk2
 		else:
 			self._solver = self._rk4
-		self._history = {'time':[self.t],'state': np.array(self.x)}
+		self._history = {'time':[self.t],'state': np.array(self.x)[np.newaxis,:,:]}
 
 	def advance(self,tmax=1,tw=1,writeout=True):
 		"""
@@ -41,7 +41,7 @@ class Lorenz63:
 		for i in range(tmax):
 			self._solver()
 			if (writeout):
-				if(i%(tw) == 0):
+				if((i+1)%(tw) == 0):
 					self.save_state()
 	
 	def save_state(self):
@@ -49,12 +49,15 @@ class Lorenz63:
 		Save time and state to history
 		"""
 		self._history['time'].append(self.t)
-		self._history['state'] = np.vstack([self._history['state'],np.array(self.x)])
+		state = np.array(self.x[np.newaxis,:,:])
+		self._history['state'] = np.vstack([self._history['state'],state])
 
 	def get_history(self):
 		"""
 		Return the dictionary containing list of times and corresponding states
 		"""
+		#state = (np.array(self._history['state'])).rehsape(
+		self._history['state'] = (np.squeeze(self._history['state']))
 		return self._history
 
 	def get_state(self,settime=False):
@@ -97,13 +100,12 @@ class Lorenz63:
 	
 	def dxdt(self):
 		k = np.empty_like(self.x)
-		
-		x,y,z = self.x
+		F=self.F
+		x,y,z = self.x.T
 		sigma, rho, beta = self.par
-		
-		k[0] = sigma*(y-x)
-		k[1] = rho*x-y-x*z
-		k[2] = x*y -beta*z
+		k[:,0] = sigma*(y-x)+F[0]
+		k[:,1] = rho*x-y-x*z+F[1]
+		k[:,2] = x*y -beta*z+F[2]
 		return k
 
 ################################################################################		
@@ -111,14 +113,14 @@ class Lorenz63:
 ################################################################################		
 if __name__ == '__main__':
 	par = [10.0,28.0,8.0/3.0]
-	x0  = [0.0,1.0,0.0]
+	x0	= [0.0,1.0,0.0]
 	
 	dt = 0.01
 	timesteps = 200
 
-	model = Lorenz63(x0,par,dt,solver="RK4",F=0,mem=1)
+	model = Lorenz63(x0,par,dt,solver="RK4",F=[0,0,0],mem=1)
 
-	model.advance(tmax=timesteps,tw=10,writeout=False)
+	model.advance(tmax=timesteps,tw=10,writeout=True)
 	h = model.get_history()
 	for t,s in zip(h['time'],h['state']):
 			print("%04d % 05d % 05d % 05d" %(round(t*1e2), 10*s[0], 10*s[1], 10*s[2]))

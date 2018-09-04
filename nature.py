@@ -41,8 +41,8 @@ Model initialization and spin up
 """
 model_nature = Lorenz63(x0,par,dt,solver="RK4",F=F0)
 
-#model_nature.advance(tmax=t_spinup,tw=1,writeout=False) #spinup without creating history
-#x0 = model_nature.get_state(settime=True)
+model_nature.advance(tmax=t_spinup,tw=1,writeout=False) #spinup without creating history
+x0 = model_nature.get_state(settime=True)
 
 model_syserr	 = Lorenz63(x0,par    ,dt    ,solver="RK4",F=F_err) 
 model_parerr	 = Lorenz63(x0,par_err,dt    ,solver="RK4",F=F0   ) 
@@ -86,6 +86,7 @@ Calculate Errors
 """
 
 plot_data.anim_L63(data,exp_name_list)
+print(time)
 rmse = np.zeros(np.shape(states_nature))
 rmse[:,0] = np.sqrt(np.mean((states_nature-states_syserr)**2,axis=1))
 rmse[:,1] = np.sqrt(np.mean((states_nature-states_parerr)**2,axis=1))
